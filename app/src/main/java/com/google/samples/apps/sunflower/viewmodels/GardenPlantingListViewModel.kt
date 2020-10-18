@@ -16,14 +16,15 @@
 
 package com.google.samples.apps.sunflower.viewmodels
 
-import android.arch.lifecycle.ViewModel
+import androidx.hilt.lifecycle.ViewModelInject
+import androidx.lifecycle.LiveData
+import androidx.lifecycle.ViewModel
 import com.google.samples.apps.sunflower.data.GardenPlantingRepository
+import com.google.samples.apps.sunflower.data.PlantAndGardenPlantings
 
-class GardenPlantingListViewModel internal constructor(
-        private val gardenPlantingRepository: GardenPlantingRepository
+class GardenPlantingListViewModel @ViewModelInject internal constructor(
+    gardenPlantingRepository: GardenPlantingRepository
 ) : ViewModel() {
-
-    fun getGardenPlantings() = gardenPlantingRepository.getGardenPlantings()
-
-    fun getPlantAndGardenPlantings() = gardenPlantingRepository.getPlantAndGardenPlantings()
+    val plantAndGardenPlantings: LiveData<List<PlantAndGardenPlantings>> =
+        gardenPlantingRepository.getPlantedGardens()
 }

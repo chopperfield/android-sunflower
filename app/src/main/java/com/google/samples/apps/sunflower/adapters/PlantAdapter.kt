@@ -16,68 +16,76 @@
 
 package com.google.samples.apps.sunflower.adapters
 
-import android.content.Intent
-import android.support.v7.widget.RecyclerView
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.ImageView
-import android.widget.TextView
-import com.bumptech.glide.Glide
-import com.bumptech.glide.load.resource.drawable.DrawableTransitionOptions
-import com.google.samples.apps.sunflower.PlantDetailActivity
-import com.google.samples.apps.sunflower.PlantDetailFragment
+import androidx.navigation.findNavController
+import androidx.recyclerview.widget.DiffUtil
+import androidx.recyclerview.widget.ListAdapter
+import androidx.recyclerview.widget.RecyclerView
+import com.google.samples.apps.sunflower.HomeViewPagerFragmentDirections
 import com.google.samples.apps.sunflower.PlantListFragment
-import com.google.samples.apps.sunflower.R
 import com.google.samples.apps.sunflower.data.Plant
+import com.google.samples.apps.sunflower.databinding.ListItemPlantBinding
 
 /**
  * Adapter for the [RecyclerView] in [PlantListFragment].
  */
-class PlantAdapter : RecyclerView.Adapter<PlantAdapter.ViewHolder>() {
+class PlantAdapter : ListAdapter<Plant, RecyclerView.ViewHolder>(PlantDiffCallback()) {
 
-    var values: List<Plant> = ArrayList(0)
-        set(items) {
-            field = items
-            notifyDataSetChanged()
-        }
-
-    private val onClickListener = View.OnClickListener { view ->
-        val item = view.tag as Plant
-        val intent = Intent(view.context, PlantDetailActivity::class.java).apply {
-            putExtra(PlantDetailFragment.ARG_ITEM_ID, item.plantId)
-        }
-        view.context.startActivity(intent)
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
+        return PlantViewHolder(
+            ListItemPlantBinding.inflate(
+                LayoutInflater.from(parent.context),
+                parent,
+                false
+            )
+        )
     }
 
-    override fun getItemCount() = values.size
+    override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
+        val plant = getItem(position)
+        (holder as PlantViewHolder).bind(plant)
+    }
 
-    override fun onBindViewHolder(holder: ViewHolder, position: Int) {
-        holder.apply {
-            Glide.with(imageView.context)
-                    .load(values[position].imageUrl)
-                    .transition(DrawableTransitionOptions.withCrossFade())
-                    .into(imageView)
-            contentView.text = values[position].name
-            with(itemView) {
-                tag = values[position]
-                setOnClickListener(onClickListener)
+    class PlantViewHolder(
+        private val binding: ListItemPlantBinding
+    ) : RecyclerView.ViewHolder(binding.root) {
+        init {
+            binding.setClickListener {
+                binding.plant?.let { plant ->
+                    navigateToPlant(plant, it)
+                }
+            }
+        }
+
+        private fun navigateToPlant(
+            plant: Plant,
+            view: View
+        ) {
+            val direction =
+                HomeViewPagerFragmentDirections.actionViewPagerFragmentToPlantDetailFragment(
+                    plant.plantId
+                )
+            view.findNavController().navigate(direction)
+        }
+
+        fun bind(item: Plant) {
+            binding.apply {
+                plant = item
+                executePendingBindings()
             }
         }
     }
+}
 
-    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
-        return ViewHolder(LayoutInflater.from(parent.context).inflate(
-                R.layout.list_item_plant, parent, false))
+private class PlantDiffCallback : DiffUtil.ItemCallback<Plant>() {
+
+    override fun areItemsTheSame(oldItem: Plant, newItem: Plant): Boolean {
+        return oldItem.plantId == newItem.plantId
     }
 
-    /**
-     * Use this constructor to create a new ViewHolder.
-     *
-     * @param itemView - view to store in the ViewHolder
-     */
-    class ViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
-        val imageView: ImageView = itemView.findViewById(R.id.plant_item_image)
-        val contentView: TextView = itemView.findViewById(R.id.plant_item_title)
+    override fun areContentsTheSame(oldItem: Plant, newItem: Plant): Boolean {
+        return oldItem == newItem
     }
 }
